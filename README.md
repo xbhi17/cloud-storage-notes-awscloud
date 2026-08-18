@@ -1,4 +1,4 @@
-# AI-Powered Student Notes Storage System on AWS
+# Cloud-Based Student Notes Storage System
 
 A production-quality, modular cloud application designed to securely manage academic resources using Python, Flask, and Amazon Web Services (AWS) S3. This project demonstrates enterprise software engineering principles, robust cloud infrastructure integration, and structured exception handling.
 
