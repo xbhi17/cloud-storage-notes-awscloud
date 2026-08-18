@@ -1,34 +1,246 @@
-# Cloud-Based Student Notes Storage System
+# AWS Student Notes Storage System
 
-A production-quality, modular cloud application designed to securely manage academic resources using Python, Flask, and Amazon Web Services (AWS) S3. This project demonstrates enterprise software engineering principles, robust cloud infrastructure integration, and structured exception handling.
+A small web application for storing and managing academic files using Flask and Amazon S3.
 
-## 🚀 Key Features
-* **Secure Cloud Uploads:** Uploads academic resources (`.pdf`, `.docx`, `.pptx`, images) directly to AWS S3 with automated MIME-type detection.
-* **Granular Metadata Listing:** Fetches real-time bucket contents including exact file sizes (KB) and human-readable upload timestamps.
-* **Secure File Retrieval:** Generates time-bound, secure S3 presigned URLs for safe data downloading without exposing public bucket access.
-* **Safe Cloud Deletion:** Clean removal of specific object keys from AWS storage with explicit UI confirmation guards.
-* **Live Search Filter:** Instant frontend scanning across stored resources optimized to reduce API retrieval latency.
-* **Responsive Dashboard:** A clean user interface built using **Bootstrap 5**, fully responsive across mobile and desktop viewports.
+I built this project to get practical experience with AWS S3, the Boto3 SDK, Flask, environment-based configuration, and cloud file operations.
 
----
+## What it does
 
-## 🏗️ Architecture & Component Design
+The application provides a simple dashboard where users can:
 
-The system implements a decoupled **3-Tier Web Architecture**:
-1. **Presentation Layer (Frontend):** HTML5, CSS3, Bootstrap 5 UI.
-2. **Application Layer (Backend Engine):** Python 3.12+ and Flask handling routing, validation, and session contexts.
-3. **Data Storage Layer (Cloud Infrastructure):** AWS S3 via the official Boto3 SDK.
+* Upload academic files
+* View files stored in the S3 bucket
+* Search files by filename
+* Download files
+* Delete files
+* See file size and last-modified time
+
+Downloads are handled through temporary S3 presigned URLs instead of making the S3 bucket publicly accessible.
+
+## How it works
+
+The application has three main parts:
 
 ```text
-ai_notes_storage/
+Browser
+   │
+   ▼
+Flask application
+   │
+   ▼
+Boto3
+   │
+   ▼
+Amazon S3
+```
+
+The Flask application handles the web routes and user actions.
+
+`S3Manager` contains the AWS-related operations, keeping the S3 code separate from the Flask routes.
+
+## Tech Stack
+
+**Backend**
+
+* Python
+* Flask
+* Boto3
+
+**Cloud**
+
+* Amazon S3
+
+**Frontend**
+
+* HTML
+* Bootstrap 5
+
+**Configuration**
+
+* python-dotenv
+* Environment variables
+
+## Project Structure
+
+```text
+ai-note-storage/
 │
-├── src/                        # Main source code directory
-│   ├── app.py                  # Routing engine & entry point
-│   ├── config.py               # Environment configuration manager
-│   ├── s3_manager.py           # Core cloud infrastructure logic (Boto3 API)
+├── src/
+│   ├── app.py
+│   ├── config.py
+│   ├── s3_manager.py
 │   └── templates/
-│       └── index.html          # Responsive Bootstrap 5 Dashboard
+│       └── index.html
 │
-├── .env                        # Local infrastructure secrets (Git ignored)
-├── .gitignore                  # Tracking isolation matrix
-└── requirements.txt            # Explicit dependency manifest with pinned versions
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
+
+### `app.py`
+
+Contains the Flask routes for:
+
+* Listing files
+* Uploading files
+* Downloading files
+* Deleting files
+
+### `config.py`
+
+Loads AWS configuration from environment variables.
+
+### `s3_manager.py`
+
+Contains the S3 operations:
+
+* Upload object
+* List objects
+* Generate presigned download URL
+* Delete object
+
+Keeping these operations in a separate class makes the Flask routes easier to follow.
+
+## Configuration
+
+Create a `.env` file locally:
+
+```env
+FLASK_SECRET_KEY=your_secret_key
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=your_region
+AWS_BUCKET_NAME=your_bucket_name
+```
+
+Do not commit the `.env` file to GitHub.
+
+A `.env.example` file can be used to document the required variables without exposing credentials.
+
+## Installation
+
+Clone the repository and enter the project directory:
+
+```bash
+git clone <your-repository-url>
+cd ai-note-storage
+```
+
+Create a virtual environment:
+
+```bash
+python -m venv .venv
+```
+
+Activate it on Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+On Linux/macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Run
+
+Start the Flask application:
+
+```bash
+python -m src.app
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5000
+```
+
+## S3 Download Flow
+
+When a user clicks Download, the application does not directly expose the bucket.
+
+Instead:
+
+```text
+User
+  │
+  ▼
+Flask /download/<filename>
+  │
+  ▼
+Boto3 generates presigned URL
+  │
+  ▼
+Temporary S3 URL
+  │
+  ▼
+File download
+```
+
+The generated URL is configured to expire after one hour.
+
+## Error Handling
+
+AWS operations catch `ClientError` exceptions and return a failure result to the Flask application.
+
+The UI then displays a success or failure message to the user.
+
+## What I learned
+
+This project helped me understand the difference between local file storage and object storage in the cloud.
+
+The main things I worked with were:
+
+* S3 object storage
+* Boto3
+* Presigned URLs
+* Flask routing
+* Environment variables
+* File uploads
+* MIME type detection
+* Separating cloud logic from application routes
+
+## Limitations
+
+This is a learning project rather than a production deployment.
+
+The current version does not include:
+
+* User authentication
+* Per-user file ownership
+* Database-backed metadata
+* File size limits
+* File type allowlisting
+* S3 pagination
+* CSRF protection
+* Automated tests
+
+These would be some of the first things I would address before deploying it for multiple users.
+
+## Possible Improvements
+
+* Add user authentication
+* Store file metadata in a database
+* Add per-user S3 prefixes
+* Add file type and size validation
+* Add pagination for large buckets
+* Add automated tests
+* Containerize the application
+* Deploy the Flask application on AWS
+* Add CI/CD
+
+## Author
+
+**Mallidi Mohan**
+
+Mathematics & Computing
+Indian Institute of Technology Goa
