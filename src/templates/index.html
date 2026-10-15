@@ -36,6 +36,8 @@
   {% endif %}
 {% endfor %}
 
+<h1 class="visually-hidden">AWS Cloud Notes Storage Dashboard</h1>
+
 <div class="d-flex flex-column gap-16">
   <!-- 0. INLINE ERROR ALERT (Clear message + Retry action, stays until dismissed) -->
   <div id="inline-error-alert" class="alert-dark alert-danger d-none p-3 rounded" role="alert">
@@ -128,7 +130,7 @@
   <!-- 2. FILTER BAR & VIEW HEADER -->
   <div class="dark-card p-3 d-flex flex-wrap align-items-center justify-content-between gap-12" id="filter-bar-card">
     <!-- Filter Chips -->
-    <div class="filter-chips-container" role="tablist" aria-label="Filter file types">
+    <div class="filter-chips-container" role="group" aria-label="Filter file types">
       <button type="button" class="filter-chip active" data-filter-category="all">
         <span>All</span>
         <span class="chip-count">{{ total_files }}</span>
@@ -253,15 +255,15 @@
               <span>Document Name</span>
               <span class="sort-indicator"></span>
             </th>
-            <th class="sortable" data-sort-field="type" title="Sort by File Type" style="width: 110px;">
+            <th class="sortable d-none d-md-table-cell" data-sort-field="type" title="Sort by File Type" style="width: 110px;">
               <span>Type</span>
               <span class="sort-indicator"></span>
             </th>
-            <th class="sortable" data-sort-field="size" title="Sort by File Size" style="width: 140px;">
+            <th class="sortable d-none d-md-table-cell" data-sort-field="size" title="Sort by File Size" style="width: 140px;">
               <span>Size</span>
               <span class="sort-indicator"></span>
             </th>
-            <th class="sortable" data-sort-field="date" title="Sort by Upload Timestamp" style="width: 200px;">
+            <th class="sortable d-none d-md-table-cell" data-sort-field="date" title="Sort by Upload Timestamp" style="width: 200px;">
               <span>Upload Timestamp</span>
               <span class="sort-indicator"></span>
             </th>
@@ -356,7 +358,7 @@
                 <span id="dropzoneFileName" class="text-white fw-semibold file-name-truncate" style="max-width: 220px;"></span>
                 <span id="dropzoneFileSize" class="text-muted-custom font-monospace" style="font-size: 11px;"></span>
               </div>
-              <button type="button" id="dropzoneRemoveFile" class="btn-dense btn-surface btn-action-sm" title="Remove selected file">
+              <button type="button" id="dropzoneRemoveFile" class="btn-dense btn-surface btn-action-sm" title="Remove selected file" aria-label="Remove selected file">
                 {{ icon('x', size=13) }}
               </button>
             </div>

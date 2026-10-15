@@ -469,6 +469,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Upload Modal Focus Management
+  const uploadModalEl = document.getElementById('uploadModal');
+  let lastUploadTrigger = null;
+  document.querySelectorAll('[data-bs-target="#uploadModal"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      lastUploadTrigger = btn;
+    });
+  });
+  if (uploadModalEl) {
+    uploadModalEl.addEventListener('shown.bs.modal', () => {
+      if (fileInput) fileInput.focus();
+    });
+    uploadModalEl.addEventListener('hidden.bs.modal', () => {
+      if (lastUploadTrigger && typeof lastUploadTrigger.focus === 'function') {
+        lastUploadTrigger.focus();
+      }
+    });
+  }
+
   // =========================================================================
   // 9. DOWNLOAD: PREPARING TOAST STATE
   // =========================================================================
