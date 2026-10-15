@@ -52,6 +52,39 @@ class BaselineRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         mock_s3.list_files.assert_called_with("exam")
 
+    @patch("src.app.s3")
+    def test_upload_success_flow(self, mock_s3):
+        mock_s3.upload_file.return_value = True
+        import io
+        data = {"file": (io.BytesIO(b"Notes content"), "sample_notes.pdf")}
+        response = self.client.post("/upload", data=data, content_type="multipart/form-data", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        mock_s3.upload_file.assert_called()
+
+    @patch("src.app.s3")
+    def test_upload_rejects_unallowed_extension(self, mock_s3):
+        import io
+        data = {"file": (io.BytesIO(b"binary"), "malicious_file.exe")}
+        response = self.client.post("/upload", data=data, content_type="multipart/form-data", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Unsupported file type", response.data)
+        mock_s3.upload_file.assert_not_called()
+
+    @patch("src.app.s3")
+    def test_download_presigned_redirect(self, mock_s3):
+        mock_s3.get_download_url.return_value = "https://s3.amazonaws.com/test-bucket/doc.pdf?signature=123"
+        response = self.client.get("/download/doc.pdf")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers["Location"], "https://s3.amazonaws.com/test-bucket/doc.pdf?signature=123")
+
+    @patch("src.app.s3")
+    def test_delete_post_flow(self, mock_s3):
+        mock_s3.delete_file.return_value = True
+        response = self.client.post("/delete/sample_note.pdf", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        mock_s3.delete_file.assert_called_with("sample_note.pdf")
+
 
 if __name__ == "__main__":
     unittest.main()
+

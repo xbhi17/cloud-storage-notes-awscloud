@@ -110,9 +110,9 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
 - [x] **Part 0: Safety Net & Repository Baseline** (DONE)
 - [x] **Part 1: Self-Hosted Static Assets & Design System Foundation** (DONE)
 - [x] **Part 2: Main Data Display (Stats, Filter Chips, List & Grid Views, Sorting)** (DONE)
-- [ ] **Part 3: Dense File Explorer & Resource Data Table** (TODO)
-- [ ] **Part 4: Upload Modal & Action Workflows** (TODO)
-- [ ] **Part 5: Search, Filter, & Sorting Interactions** (TODO)
+- [x] **Part 3: File Actions & Security Hardening** (DONE)
+- [ ] **Part 4: UI States (Loading, Empty, Success, Error Toasts & Alerts)** (TODO)
+- [ ] **Part 5: Search, Filter, & Sorting Polish** (TODO)
 - [ ] **Part 6: Final Polish, Accessibility & End-to-End Verification** (TODO)
 
 ---
@@ -175,6 +175,30 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
   * Dual view modes: Dense list table view with sortable columns (name, type, size, modified) and responsive grid view, persisted in `localStorage`.
   * Download button wired directly to `url_for('download', filename=file.key)`; Delete button preserved as a non-functional placeholder until Part 3 per task instructions.
 * **Open Issues**:
-  * Delete action workflow and modal confirmation to be wired in Part 3/4.
+  * None.
+
+### Part 3: File Actions & Security Hardening
+* **Status**: DONE
+* **Files Touched**:
+  * `src/config.py` (Added `MAX_CONTENT_LENGTH = 16 * 1024 * 1024` and `ALLOWED_EXTENSIONS`)
+  * `src/app.py` (Added `allowed_file` check, 413 error handler, safe filename sanitization)
+  * `src/templates/base.html` (Added `{% block modals %}` outside `.app-shell` to avoid backdrop stacking conflicts)
+  * `src/templates/index.html` (Added compact dropzone, progress bar, download toast, and delete confirmation modal)
+  * `src/templates/partials/file_macros.html` (Wired delete buttons to trigger delete confirmation modal with file context)
+  * `src/static/css/dashboard.css` (Dropzone states, progress bar, modal styling, `.btn-danger-destructive`)
+  * `src/static/js/dashboard.js` (Drag-and-drop, validation, XHR upload progress, download toast trigger, delete modal focus management)
+  * `tests/test_baseline.py` (Added 4 unit tests covering upload validation, download redirect, delete flow, 413 handling; 7/7 passing)
+  * `screenshots/part3_upload_dropzone.png`
+  * `screenshots/part3_delete_modal.png`
+  * `PROGRESS.md`
+* **Decisions Made**:
+  * Kept original form field name `file`, method `POST`, and route `/upload`.
+  * Dropzone: Compact dropzone (~110px tall) supporting drag-and-drop and file browsing with instant client-side file extension & size validation (mirroring server 16MB limit). Pure HTML `<input type="file" name="file">` fallback ensures form submits even with JavaScript disabled.
+  * XHR progress bar: Real-time progress updates during upload with percent readout, animated status, and submit button state management.
+  * Download flow: Retained existing presigned S3 download URL generation. Added a "preparing download" notification toast without exposing any raw bucket details in HTML or client scripts.
+  * Delete flow: Retained existing secure `POST /delete/<path:filename>` route. Implemented Bootstrap modal `#deleteConfirmModal` displaying the filename, destructive orange submit button (`.btn-danger-destructive`), default focus on Cancel, and aria focus trap/return.
+  * Backend safety: Added `MAX_CONTENT_LENGTH = 16 * 1024 * 1024` (16MB) in `src/config.py`, filename extension validation against `ALLOWED_EXTENSIONS`, 413 Payload Too Large error handler with friendly flash message, and `secure_filename` sanitization.
+* **Open Issues**:
+  * None.
 
 

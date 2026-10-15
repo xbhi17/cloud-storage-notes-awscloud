@@ -47,6 +47,9 @@
     </div>
   </div>
 
+  <!-- Landmark: Modals rendered outside app-shell to prevent stacking context clipping -->
+  {% block modals %}{% endblock %}
+
   <!-- Self-Hosted Bootstrap 5 Bundle JS (No CDNs) -->
   <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
 

@@ -58,11 +58,11 @@
     </td>
     <td class="actions-cell text-end">
       <div class="d-inline-flex align-items-center gap-8">
-        <a href="{{ url_for('download', filename=file.key) }}" class="btn-dense btn-surface btn-action-sm" target="_blank" title="Download securely" data-bs-toggle="tooltip">
+        <a href="{{ url_for('download', filename=file.key) }}" class="btn-dense btn-surface btn-action-sm btn-download-action" target="_blank" title="Download securely" data-bs-toggle="tooltip">
           {{ icon('download', size=14) }}
           <span>Download</span>
         </a>
-        <button type="button" class="btn-dense btn-surface text-subtle-custom btn-action-sm opacity-50 pe-none" title="Delete will be enabled in Part 3" data-bs-toggle="tooltip">
+        <button type="button" class="btn-dense btn-danger-soft btn-action-sm btn-delete-trigger" data-filename="{{ file.key }}" title="Delete file" data-bs-toggle="tooltip">
           {{ icon('trash', size=14) }}
           <span>Delete</span>
         </button>
@@ -105,11 +105,11 @@
           <span class="text-subtle-custom">{{ file.last_modified.split(' ')[0] }}</span>
         </div>
         <div class="d-flex align-items-center gap-8">
-          <a href="{{ url_for('download', filename=file.key) }}" class="btn-dense btn-surface flex-grow-1" target="_blank" title="Download">
+          <a href="{{ url_for('download', filename=file.key) }}" class="btn-dense btn-surface flex-grow-1 btn-download-action" target="_blank" title="Download">
             {{ icon('download', size=14) }}
             <span>Download</span>
           </a>
-          <button type="button" class="btn-dense btn-surface text-subtle-custom opacity-50 pe-none" title="Delete will be enabled in Part 3">
+          <button type="button" class="btn-dense btn-danger-soft btn-delete-trigger" data-filename="{{ file.key }}" title="Delete file" data-bs-toggle="tooltip">
             {{ icon('trash', size=14) }}
           </button>
         </div>

@@ -217,8 +217,28 @@
     </div>
   </div>
 </div>
+{% endblock %}
 
-<!-- Upload Modal (Form field contract: name="file", POST to /upload) -->
+{% block modals %}
+<!-- 6. PREPARING DOWNLOAD TOAST / BANNER -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+  <div id="downloadToast" class="toast align-items-center text-white bg-surface border-subtle shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center gap-12">
+        <div class="spinner-border spinner-border-sm text-lime" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <div>
+          <div class="fw-semibold" style="font-size: 13px;">Preparing download...</div>
+          <div class="text-subtle-custom" style="font-size: 11px;">Generating secure one-time presigned link</div>
+        </div>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<!-- 7. UPLOAD MODAL WITH COMPACT DROPZONE (Form field contract: name="file", POST to /upload) -->
 <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content dark-modal">
@@ -229,21 +249,95 @@
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
+      <form id="uploadForm" action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
         <div class="modal-body">
-          <div class="mb-3">
-            <label for="modalFileInput" class="form-label text-muted-custom">Select File</label>
-            <input type="file" name="file" id="modalFileInput" class="form-control select-dense" required>
-            <div class="form-text text-subtle-custom mt-2" style="font-size: 12px;">
-              Files are securely stored in your private AWS S3 bucket.
+          <!-- Dropzone Container (~96-120px tall) -->
+          <div id="dropzone" class="upload-dropzone text-center p-3">
+            <!-- Hidden native file input (works with JS disabled) -->
+            <input type="file" name="file" id="modalFileInput" class="dropzone-input" required aria-label="Choose file to upload">
+            
+            <div class="dropzone-prompt d-flex flex-column align-items-center justify-content-center h-100">
+              <span class="text-lime mb-2">{{ icon('upload', size=26) }}</span>
+              <div class="dropzone-text fw-medium" style="font-size: 13px;">
+                Drag &amp; drop file here, or <span class="text-lime text-decoration-underline" style="cursor: pointer;">browse</span>
+              </div>
+              <div class="text-subtle-custom mt-1" style="font-size: 11px;">
+                Max file size: 16 MB. Supports PDF, Docs, Code, Archives, Images.
+              </div>
+            </div>
+
+            <div id="dropzoneFilePreview" class="dropzone-preview d-none align-items-center justify-content-between p-2 mt-2">
+              <div class="d-flex align-items-center gap-8 min-w-0">
+                <span class="text-blue">{{ icon('file', size=18) }}</span>
+                <span id="dropzoneFileName" class="text-white fw-semibold file-name-truncate" style="max-width: 220px;"></span>
+                <span id="dropzoneFileSize" class="text-muted-custom font-monospace" style="font-size: 11px;"></span>
+              </div>
+              <button type="button" id="dropzoneRemoveFile" class="btn-dense btn-surface btn-action-sm" title="Remove selected file">
+                {{ icon('x', size=13) }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Client-side Validation Error Notice -->
+          <div id="uploadErrorNotice" class="alert-dark alert-danger d-none mt-3 p-2" style="font-size: 12px;" role="alert">
+            <span class="text-orange">●</span>
+            <span id="uploadErrorText" class="ms-2"></span>
+          </div>
+
+          <!-- Upload Progress Bar -->
+          <div id="uploadProgressWrapper" class="d-none mt-3">
+            <div class="d-flex justify-content-between text-muted-custom mb-1" style="font-size: 12px;">
+              <span id="uploadProgressStatus">Uploading to S3...</span>
+              <span id="uploadProgressPercent" class="font-monospace">0%</span>
+            </div>
+            <div class="progress" style="height: 6px; background-color: var(--surface-2);">
+              <div id="uploadProgressBar" class="progress-bar" role="progressbar" style="width: 0%; background-color: var(--lime); transition: width 0.15s ease;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-dense btn-surface" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn-dense btn-lime">
+          <button type="submit" id="uploadSubmitBtn" class="btn-dense btn-lime">
             {{ icon('upload', size=15) }}
             <span>Upload File</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 8. DELETE CONFIRMATION MODAL (Destructive Orange Button, Cancel Focused by Default, Trap Focus) -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content dark-modal border-orange-soft">
+      <div class="modal-header">
+        <h5 class="modal-title h6 fw-bold text-white d-flex align-items-center gap-8" id="deleteModalLabel">
+          <span class="text-orange">{{ icon('trash', size=18) }}</span>
+          <span>Confirm File Deletion</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="deleteForm" method="POST" action="">
+        <div class="modal-body">
+          <p class="text-white mb-2" style="font-size: 13px;">
+            Are you sure you want to permanently delete this object from your AWS S3 bucket?
+          </p>
+          <div class="p-2 bg-surface-2 border-subtle rounded d-flex align-items-center gap-8 my-2">
+            <span class="text-orange">{{ icon('file', size=16) }}</span>
+            <span id="deleteModalFileName" class="text-white fw-bold file-name-truncate font-monospace" style="max-width: 380px;"></span>
+          </div>
+          <p class="text-subtle-custom mb-0" style="font-size: 11px;">
+            This action cannot be undone. The object will be immediately removed from cloud storage.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <!-- Cancel button focused by default -->
+          <button type="button" id="deleteModalCancelBtn" class="btn-dense btn-surface" data-bs-dismiss="modal">Cancel</button>
+          <!-- Destructive Orange Submit Button -->
+          <button type="submit" id="deleteModalConfirmBtn" class="btn-dense btn-danger-destructive">
+            {{ icon('trash', size=15) }}
+            <span>Delete File</span>
           </button>
         </div>
       </form>

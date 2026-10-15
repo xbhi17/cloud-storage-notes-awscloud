@@ -449,14 +449,19 @@ input[type="file"].select-dense::file-selector-button:hover {
 }
 
 /* Modals */
+.modal-backdrop.show {
+  opacity: 0.75;
+  background-color: #000000;
+}
 .modal-content.dark-modal {
-  background-color: var(--surface);
-  border: 1px solid var(--border-strong);
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border-strong) !important;
   border-radius: var(--radius-card);
   color: var(--text);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
 }
 .modal-header, .modal-footer {
-  border-color: var(--border);
+  border-color: var(--border) !important;
 }
 .btn-close-white {
   filter: invert(1) grayscale(100%) brightness(200%);
@@ -677,6 +682,61 @@ input[type="file"].select-dense::file-selector-button:hover {
   font-size: 12px;
 }
 
+/* Dropzone (~96-120px tall) */
+.upload-dropzone {
+  min-height: 110px;
+  background-color: var(--surface-2);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  position: relative;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.upload-dropzone:hover, .upload-dropzone.dragover {
+  border-color: var(--lime);
+  background-color: var(--surface-3);
+}
+.dropzone-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 5;
+}
+.dropzone-preview {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  position: relative;
+  z-index: 10;
+}
+
+/* Destructive Button */
+.btn-danger-destructive {
+  background-color: var(--orange);
+  color: #FFFFFF;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.btn-danger-destructive:hover {
+  background-color: var(--orange-hover);
+  color: #FFFFFF;
+}
+.btn-danger-destructive:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.border-orange-soft {
+  border-color: rgba(255, 81, 43, 0.3) !important;
+}
+
 /* ==========================================================================
    UTILITIES
    ========================================================================== */
@@ -692,4 +752,5 @@ input[type="file"].select-dense::file-selector-button:hover {
 .gap-8 { gap: 8px !important; }
 .gap-12 { gap: 12px !important; }
 .gap-16 { gap: 16px !important; }
+
 
