@@ -108,7 +108,7 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
 ## Part Checklist
 
 - [x] **Part 0: Safety Net & Repository Baseline** (DONE)
-- [ ] **Part 1: Self-Hosted Static Assets & Design System Foundation** (TODO)
+- [x] **Part 1: Self-Hosted Static Assets & Design System Foundation** (DONE)
 - [ ] **Part 2: Dark Full-Screen Layout Shell & Navigation** (TODO)
 - [ ] **Part 3: Dense File Explorer & Resource Data Table** (TODO)
 - [ ] **Part 4: Upload Modal & Action Workflows** (TODO)
@@ -131,4 +131,28 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
   * Created automated regression test gate in `tests/test_baseline.py` using standard library `unittest` (no extra external test runners required).
   * Maintained 100% clean baseline without modifying any existing production code or route contracts.
 * **Open Issues**:
-  * Self-hosting Bootstrap 5 CSS/JS and icon assets will be required in Part 1 to eliminate CDN dependencies per Rule 5.
+  * None.
+
+### Part 1: Self-Hosted Static Assets & Design System Foundation
+* **Status**: DONE
+* **Files Touched**:
+  * `src/static/vendor/bootstrap.min.css` (Self-hosted Bootstrap 5.3.0)
+  * `src/static/vendor/bootstrap.bundle.min.js` (Self-hosted Bootstrap 5.3.0 bundle)
+  * `src/static/css/dashboard.css` (Design tokens, base, 100dvh layout, components, utilities)
+  * `src/static/js/dashboard.js` (Keyboard shortcut `/` for search, tooltips, view switcher)
+  * `src/templates/partials/icons.html` (Jinja SVG macro for self-hosted inline icons)
+  * `src/templates/partials/sidebar.html` (64-72px icon-only nav landmark with active state)
+  * `src/templates/partials/topbar.html` (56px header landmark with search, view toggles, upload trigger)
+  * `src/templates/base.html` (Core layout shell with landmarks: nav, header, main content)
+  * `src/templates/index.html` (Refactored to extend base.html while preserving all routes and contracts)
+  * `screenshots/shell_1366x768.png` (Screenshot at 1366x768)
+  * `screenshots/shell_1920x1080.png` (Screenshot at 1920x1080)
+  * `PROGRESS.md` (Updated tracking)
+* **Decisions Made**:
+  * Fully eliminated CDN dependencies for Bootstrap 5 and icons; placed self-hosted vendor files in `src/static/vendor/` and SVG macros in `src/templates/partials/icons.html`.
+  * Created comprehensive design tokens with `--bg #080909`, `--surface #171A17`, `--surface-2 #212621`, `--border rgba(255,255,255,0.08)`, and accent roles (`--lime #C7F36B`, `--orange #FF512B`, `--blue #1765D1`, `--pink #F49AC2`, `--green #347748`, `--yellow #FFC52E`).
+  * Enforced full viewport shell at `100dvh` without document-level scroll; main content region has styled custom scrollbars and safe inner padding (16px desktop, 12px mobile).
+  * Maintained exact route and form contracts (`/`, `/upload`, `/download/<path:filename>`, `/delete/<path:filename>`).
+* **Open Issues**:
+  * Existing form sections are placed within dark cards; Part 2 and 3 will refine the table density and file metadata presentation.
+

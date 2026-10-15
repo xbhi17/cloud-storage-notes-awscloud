@@ -1,88 +1,125 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered Student Notes Storage</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-    <div class="container py-5">
-        <h1 class="mb-4 text-center text-primary fw-bold">Cloud Notes Storage Dashboard</h1>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
 
-        <div class="row g-4 mb-5">
-            <div class="col-md-6">
-                <div class="card p-4 shadow-sm">
-                    <h4 class="card-title mb-3">Upload Academic Resources</h4>
-                    <form action="/upload" method="POST" enctype="multipart/form-data">
-                        <div class="input-group">
-                            <input type="file" name="file" class="form-control" required>
-                            <button class="btn btn-primary" type="submit">Upload File</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card p-4 shadow-sm">
-                    <h4 class="card-title mb-3">Search Library</h4>
-                    <form action="/" method="GET">
-                        <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="Search notes by name..." value="{{ query }}">
-                            <button class="btn btn-secondary" type="submit">Search</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+{% block title %}Cloud Notes Storage Dashboard{% endblock %}
 
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="card-title mb-4 text-secondary">Stored Academic Notes</h3>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Document Name</th>
-                                <th>File Size (KB)</th>
-                                <th>Upload Timestamp</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for file in files %}
-                            <tr>
-                                <td class="fw-semibold text-dark">{{ file.key }}</td>
-                                <td>{{ file.size }} KB</td>
-                                <td>{{ file.last_modified }}</td>
-                                <td class="text-end">
-                                    <a href="/download/{{ file.key }}" class="btn btn-success btn-sm me-2" target="_blank">Download</a>
-                                    <form action="/delete/{{ file.key }}" method="POST" class="d-inline">
-                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Confirm deletion?')">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="4" class="text-center py-4 text-muted">No academic resources found. Try uploading one!</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+{% block content %}
+<div class="d-flex flex-column gap-16">
+  <!-- Original functionality embedded cleanly inside the new dark shell -->
+  <div class="row g-3">
+    <!-- Upload Section -->
+    <div class="col-12 col-md-6">
+      <div class="dark-card">
+        <h4 class="h6 text-uppercase text-muted-custom fw-semibold mb-3">Upload Academic Resources</h4>
+        <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
+          <div class="input-group">
+            <input type="file" name="file" class="form-control select-dense" style="padding-top: 6px;" required>
+            <button class="btn-dense btn-lime" type="submit">
+              {{ icon('upload', size=15) }}
+              <span>Upload File</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+
+    <!-- Search Section -->
+    <div class="col-12 col-md-6">
+      <div class="dark-card">
+        <h4 class="h6 text-uppercase text-muted-custom fw-semibold mb-3">Search Library</h4>
+        <form action="{{ url_for('index') }}" method="GET">
+          <div class="input-group">
+            <input type="text" name="search" class="form-control select-dense" placeholder="Search notes by name..." value="{{ query }}">
+            <button class="btn-dense btn-surface" type="submit">
+              {{ icon('search', size=15) }}
+              <span>Search</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stored Notes Table Section -->
+  <div class="dark-card p-0 overflow-hidden">
+    <div class="p-3 border-bottom border-subtle d-flex align-items-center justify-content-between">
+      <h3 class="h6 mb-0 text-white fw-bold">Stored Academic Notes</h3>
+      <span class="badge-custom badge-default">{{ files|length }} file{% if files|length != 1 %}s{% endif %}</span>
+    </div>
+    <div class="table-responsive">
+      <table class="dark-table align-middle">
+        <thead>
+          <tr>
+            <th>Document Name</th>
+            <th>File Size</th>
+            <th>Upload Timestamp</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for file in files %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-8">
+                <span class="text-blue">{{ icon('file', size=16) }}</span>
+                <span class="fw-semibold text-white">{{ file.key }}</span>
+              </div>
+            </td>
+            <td><span class="text-muted-custom">{{ file.size }} KB</span></td>
+            <td><span class="text-subtle-custom">{{ file.last_modified }}</span></td>
+            <td class="text-end">
+              <a href="{{ url_for('download', filename=file.key) }}" class="btn-dense btn-surface me-2" target="_blank" title="Download File">
+                {{ icon('download', size=14) }}
+                <span>Download</span>
+              </a>
+              <form action="{{ url_for('delete', filename=file.key) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn-dense btn-danger-soft" onclick="return confirm('Confirm deletion?')">
+                  {{ icon('trash', size=14) }}
+                  <span>Delete</span>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="text-center py-5 text-muted-custom">
+              <div class="d-flex flex-column align-items-center gap-8">
+                <span class="text-subtle-custom">{{ icon('folder', size=36) }}</span>
+                <span>No academic resources found. Try uploading one!</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal (Triggered by Topbar Upload button) -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content dark-modal">
+      <div class="modal-header">
+        <h5 class="modal-title h6 fw-bold" id="uploadModalLabel">Upload Academic Resource</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="modalFileInput" class="form-label text-muted-custom">Select File</label>
+            <input type="file" name="file" id="modalFileInput" class="form-control select-dense" style="padding-top: 6px;" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-dense btn-surface" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn-dense btn-lime">
+            {{ icon('upload', size=15) }}
+            <span>Upload</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

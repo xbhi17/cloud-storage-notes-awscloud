@@ -1,0 +1,41 @@
+{% from "partials/icons.html" import icon %}
+<header class="app-topbar">
+  <!-- Left: Global Search -->
+  <div class="topbar-left">
+    <form action="{{ url_for('index') }}" method="GET" class="w-100">
+      <div class="search-box">
+        <span class="search-icon">{{ icon('search', size=15) }}</span>
+        <input 
+          type="text" 
+          id="global-search-input" 
+          name="search" 
+          class="search-input" 
+          placeholder="Search files by name..." 
+          value="{{ query or '' }}"
+          autocomplete="off"
+          aria-label="Search files by name"
+        >
+        <span class="search-shortcut-hint" title="Press / to search">/</span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Right: Actions and Controls -->
+  <div class="topbar-right">
+    <!-- View Switcher (Placeholder for Part 2/3) -->
+    <div class="view-toggle-group" role="group" aria-label="View toggle">
+      <button type="button" class="view-toggle-btn active" data-view-toggle="list" title="List View" data-bs-toggle="tooltip">
+        {{ icon('list', size=15) }}
+      </button>
+      <button type="button" class="view-toggle-btn" data-view-toggle="grid" title="Grid View" data-bs-toggle="tooltip">
+        {{ icon('grid', size=15) }}
+      </button>
+    </div>
+
+    <!-- Upload Button Trigger (Opens modal or scrolls to form) -->
+    <button type="button" class="btn-dense btn-lime" data-bs-toggle="modal" data-bs-target="#uploadModal">
+      {{ icon('upload', size=15) }}
+      <span>Upload File</span>
+    </button>
+  </div>
+</header>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cloud Notes Storage Dashboard{% endblock %}</title>
+
+  <!-- Self-Hosted Bootstrap 5 CSS (No CDNs) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+
+  <!-- Custom Design Tokens, Layout, and Components -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Landmark: Left Navigation Sidebar (64-72px) -->
+    {% include "partials/sidebar.html" %}
+
+    <div class="app-main">
+      <!-- Landmark: Header / Top Bar (~56px) -->
+      {% include "partials/topbar.html" %}
+
+      <!-- Landmark: Scrollable Main Content Region -->
+      <main class="app-content" id="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert-dark alert-{{ category }}" role="alert">
+                <div class="d-flex align-items-center gap-8">
+                  {% if category == 'success' %}
+                    <span class="text-lime">●</span>
+                  {% else %}
+                    <span class="text-orange">●</span>
+                  {% endif %}
+                  <span>{{ message }}</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- Self-Hosted Bootstrap 5 Bundle JS (No CDNs) -->
+  <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+
+  <!-- Dashboard Shell Script -->
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>
