@@ -1,121 +1,249 @@
 {% extends "base.html" %}
 {% from "partials/icons.html" import icon %}
+{% from "partials/file_macros.html" import file_row, file_card %}
 
 {% block title %}Cloud Notes Storage Dashboard{% endblock %}
 
 {% block content %}
+{# Compute derived real data stats and categories #}
+{% set total_files = files|length %}
+{% set total_size_val = namespace(size=0.0) %}
+{% set doc_count = namespace(count=0) %}
+{% set img_count = namespace(count=0) %}
+{% set other_count = namespace(count=0) %}
+{% set largest_file = namespace(name='', size=0.0) %}
+{% set newest_file = namespace(name='', date='') %}
+
+{% for f in files %}
+  {% set total_size_val.size = total_size_val.size + f.size %}
+  {% set ext = f.key.split('.')[-1].lower() if '.' in f.key else '' %}
+  {% if ext in ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'md', 'csv', 'xlsx', 'xls', 'pptx', 'ppt'] %}
+    {% set doc_count.count = doc_count.count + 1 %}
+  {% elif ext in ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'ico'] %}
+    {% set img_count.count = img_count.count + 1 %}
+  {% else %}
+    {% set other_count.count = other_count.count + 1 %}
+  {% endif %}
+
+  {% if f.size > largest_file.size %}
+    {% set largest_file.size = f.size %}
+    {% set largest_file.name = f.key %}
+  {% endif %}
+
+  {% if not newest_file.date or f.last_modified > newest_file.date %}
+    {% set newest_file.date = f.last_modified %}
+    {% set newest_file.name = f.key %}
+  {% endif %}
+{% endfor %}
+
 <div class="d-flex flex-column gap-16">
-  <!-- Original functionality embedded cleanly inside the new dark shell -->
+  <!-- 1. STAT TILES (Derived strictly from real data) -->
   <div class="row g-3">
-    <!-- Upload Section -->
-    <div class="col-12 col-md-6">
-      <div class="dark-card">
-        <h4 class="h6 text-uppercase text-muted-custom fw-semibold mb-3">Upload Academic Resources</h4>
-        <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
-          <div class="input-group">
-            <input type="file" name="file" class="form-control select-dense" style="padding-top: 6px;" required>
-            <button class="btn-dense btn-lime" type="submit">
-              {{ icon('upload', size=15) }}
-              <span>Upload File</span>
-            </button>
-          </div>
-        </form>
+    <!-- Total Files -->
+    <div class="col-6 col-md-3">
+      <div class="stat-tile">
+        <div class="stat-icon-wrapper" style="background-color: rgba(199, 243, 107, 0.12); color: var(--lime);">
+          {{ icon('folder', size=20) }}
+        </div>
+        <div class="min-w-0">
+          <div class="stat-val">{{ total_files }}</div>
+          <div class="stat-label">Total Files</div>
+        </div>
       </div>
     </div>
 
-    <!-- Search Section -->
-    <div class="col-12 col-md-6">
-      <div class="dark-card">
-        <h4 class="h6 text-uppercase text-muted-custom fw-semibold mb-3">Search Library</h4>
-        <form action="{{ url_for('index') }}" method="GET">
-          <div class="input-group">
-            <input type="text" name="search" class="form-control select-dense" placeholder="Search notes by name..." value="{{ query }}">
-            <button class="btn-dense btn-surface" type="submit">
-              {{ icon('search', size=15) }}
-              <span>Search</span>
-            </button>
+    <!-- Total Storage Consumed -->
+    <div class="col-6 col-md-3">
+      <div class="stat-tile">
+        <div class="stat-icon-wrapper" style="background-color: rgba(23, 101, 209, 0.12); color: #6ba6f7;">
+          {{ icon('hard-drive', size=20) }}
+        </div>
+        <div class="min-w-0">
+          <div class="stat-val font-monospace">
+            {% if total_size_val.size >= 1024 %}
+              {{ (total_size_val.size / 1024)|round(2) }} MB
+            {% else %}
+              {{ total_size_val.size|round(2) }} KB
+            {% endif %}
           </div>
-        </form>
+          <div class="stat-label">Total Storage</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Largest Object -->
+    <div class="col-6 col-md-3">
+      <div class="stat-tile">
+        <div class="stat-icon-wrapper" style="background-color: rgba(255, 197, 46, 0.12); color: var(--yellow);">
+          {{ icon('file', size=20) }}
+        </div>
+        <div class="min-w-0">
+          <div class="stat-val font-monospace">{{ largest_file.size|round(1) }} KB</div>
+          <div class="stat-label">Largest File</div>
+          <div class="stat-sub" title="{{ largest_file.name }}">{{ largest_file.name or 'None' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Most Recent Upload -->
+    <div class="col-6 col-md-3">
+      <div class="stat-tile">
+        <div class="stat-icon-wrapper" style="background-color: rgba(244, 154, 194, 0.12); color: var(--pink);">
+          {{ icon('clock', size=20) }}
+        </div>
+        <div class="min-w-0">
+          <div class="stat-val font-monospace" style="font-size: 13px;">{{ newest_file.date.split(' ')[0] if newest_file.date else 'None' }}</div>
+          <div class="stat-label">Latest Upload</div>
+          <div class="stat-sub" title="{{ newest_file.name }}">{{ newest_file.name or 'None' }}</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Stored Notes Table Section -->
-  <div class="dark-card p-0 overflow-hidden">
-    <div class="p-3 border-bottom border-subtle d-flex align-items-center justify-content-between">
-      <h3 class="h6 mb-0 text-white fw-bold">Stored Academic Notes</h3>
-      <span class="badge-custom badge-default">{{ files|length }} file{% if files|length != 1 %}s{% endif %}</span>
+  <!-- 2. FILTER BAR & VIEW HEADER -->
+  <div class="dark-card p-3 d-flex flex-wrap align-items-center justify-content-between gap-12">
+    <!-- Filter Chips -->
+    <div class="filter-chips-container" role="tablist" aria-label="Filter file types">
+      <button type="button" class="filter-chip active" data-filter-category="all">
+        <span>All</span>
+        <span class="chip-count">{{ total_files }}</span>
+      </button>
+
+      {% if doc_count.count > 0 %}
+      <button type="button" class="filter-chip" data-filter-category="documents">
+        <span class="text-blue">{{ icon('file-text', size=13) }}</span>
+        <span>Documents</span>
+        <span class="chip-count">{{ doc_count.count }}</span>
+      </button>
+      {% endif %}
+
+      {% if img_count.count > 0 %}
+      <button type="button" class="filter-chip" data-filter-category="images">
+        <span class="text-pink">{{ icon('image', size=13) }}</span>
+        <span>Images</span>
+        <span class="chip-count">{{ img_count.count }}</span>
+      </button>
+      {% endif %}
+
+      {% if other_count.count > 0 %}
+      <button type="button" class="filter-chip" data-filter-category="other">
+        <span class="text-muted-custom">{{ icon('file', size=13) }}</span>
+        <span>Other</span>
+        <span class="chip-count">{{ other_count.count }}</span>
+      </button>
+      {% endif %}
     </div>
+
+    <!-- Active Count Badge -->
+    <div class="d-flex align-items-center gap-8">
+      <span class="text-muted-custom" style="font-size: 13px;">Showing:</span>
+      <span class="badge-custom badge-default" id="visible-count-badge">{{ total_files }} file{% if total_files != 1 %}s{% endif %}</span>
+    </div>
+  </div>
+
+  <!-- 3. FILE EXPLORER: LIST VIEW -->
+  <div id="list-view-container" class="dark-card p-0 overflow-hidden">
     <div class="table-responsive">
       <table class="dark-table align-middle">
         <thead>
           <tr>
-            <th>Document Name</th>
-            <th>File Size</th>
-            <th>Upload Timestamp</th>
-            <th class="text-end">Actions</th>
+            <th class="sortable" data-sort-field="name" title="Sort by Document Name">
+              <span>Document Name</span>
+              <span class="sort-indicator"></span>
+            </th>
+            <th class="sortable" data-sort-field="type" title="Sort by File Type" style="width: 110px;">
+              <span>Type</span>
+              <span class="sort-indicator"></span>
+            </th>
+            <th class="sortable" data-sort-field="size" title="Sort by File Size" style="width: 140px;">
+              <span>Size</span>
+              <span class="sort-indicator"></span>
+            </th>
+            <th class="sortable" data-sort-field="date" title="Sort by Upload Timestamp" style="width: 200px;">
+              <span>Upload Timestamp</span>
+              <span class="sort-indicator"></span>
+            </th>
+            <th class="text-end" style="width: 190px;">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="file-table-body">
           {% for file in files %}
-          <tr>
-            <td>
-              <div class="d-flex align-items-center gap-8">
-                <span class="text-blue">{{ icon('file', size=16) }}</span>
-                <span class="fw-semibold text-white">{{ file.key }}</span>
-              </div>
-            </td>
-            <td><span class="text-muted-custom">{{ file.size }} KB</span></td>
-            <td><span class="text-subtle-custom">{{ file.last_modified }}</span></td>
-            <td class="text-end">
-              <a href="{{ url_for('download', filename=file.key) }}" class="btn-dense btn-surface me-2" target="_blank" title="Download File">
-                {{ icon('download', size=14) }}
-                <span>Download</span>
-              </a>
-              <form action="{{ url_for('delete', filename=file.key) }}" method="POST" class="d-inline">
-                <button type="submit" class="btn-dense btn-danger-soft" onclick="return confirm('Confirm deletion?')">
-                  {{ icon('trash', size=14) }}
-                  <span>Delete</span>
-                </button>
-              </form>
-            </td>
-          </tr>
+            {{ file_row(file) }}
           {% else %}
-          <tr>
-            <td colspan="4" class="text-center py-5 text-muted-custom">
-              <div class="d-flex flex-column align-items-center gap-8">
-                <span class="text-subtle-custom">{{ icon('folder', size=36) }}</span>
-                <span>No academic resources found. Try uploading one!</span>
-              </div>
-            </td>
-          </tr>
+            <tr>
+              <td colspan="5" class="text-center py-5 text-muted-custom">
+                <div class="d-flex flex-column align-items-center gap-8">
+                  <span class="text-subtle-custom">{{ icon('folder', size=36) }}</span>
+                  <span>No academic resources stored yet. Upload your first note!</span>
+                </div>
+              </td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
+
+  <!-- 4. FILE EXPLORER: GRID VIEW -->
+  <div id="grid-view-container" class="d-none">
+    <div class="row g-3" id="file-grid-row">
+      {% for file in files %}
+        {{ file_card(file) }}
+      {% else %}
+        <div class="col-12">
+          <div class="dark-card text-center py-5 text-muted-custom">
+            <div class="d-flex flex-column align-items-center gap-8">
+              <span class="text-subtle-custom">{{ icon('folder', size=36) }}</span>
+              <span>No academic resources stored yet. Upload your first note!</span>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 5. NO SEARCH RESULTS STATE -->
+  <div id="no-search-results" class="dark-card text-center py-5 d-none">
+    <div class="d-flex flex-column align-items-center gap-12">
+      <span class="text-orange">{{ icon('alert-circle', size=38) }}</span>
+      <div>
+        <h4 class="h6 text-white fw-bold mb-1">No matching files found</h4>
+        <p class="text-muted-custom mb-0" style="font-size: 13px;">Try adjusting your search query or clear the active category filters.</p>
+      </div>
+      <button type="button" class="btn-dense btn-surface mt-2" id="clear-filters-btn">
+        {{ icon('x', size=14) }}
+        <span>Clear Filters</span>
+      </button>
+    </div>
+  </div>
 </div>
 
-<!-- Upload Modal (Triggered by Topbar Upload button) -->
+<!-- Upload Modal (Form field contract: name="file", POST to /upload) -->
 <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content dark-modal">
       <div class="modal-header">
-        <h5 class="modal-title h6 fw-bold" id="uploadModalLabel">Upload Academic Resource</h5>
+        <h5 class="modal-title h6 fw-bold text-white d-flex align-items-center gap-8" id="uploadModalLabel">
+          <span class="text-lime">{{ icon('upload', size=18) }}</span>
+          <span>Upload Academic Resource</span>
+        </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
         <div class="modal-body">
           <div class="mb-3">
             <label for="modalFileInput" class="form-label text-muted-custom">Select File</label>
-            <input type="file" name="file" id="modalFileInput" class="form-control select-dense" style="padding-top: 6px;" required>
+            <input type="file" name="file" id="modalFileInput" class="form-control select-dense" required>
+            <div class="form-text text-subtle-custom mt-2" style="font-size: 12px;">
+              Files are securely stored in your private AWS S3 bucket.
+            </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-dense btn-surface" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn-dense btn-lime">
             {{ icon('upload', size=15) }}
-            <span>Upload</span>
+            <span>Upload File</span>
           </button>
         </div>
       </form>

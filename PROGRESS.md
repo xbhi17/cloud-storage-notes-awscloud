@@ -109,7 +109,7 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
 
 - [x] **Part 0: Safety Net & Repository Baseline** (DONE)
 - [x] **Part 1: Self-Hosted Static Assets & Design System Foundation** (DONE)
-- [ ] **Part 2: Dark Full-Screen Layout Shell & Navigation** (TODO)
+- [x] **Part 2: Main Data Display (Stats, Filter Chips, List & Grid Views, Sorting)** (DONE)
 - [ ] **Part 3: Dense File Explorer & Resource Data Table** (TODO)
 - [ ] **Part 4: Upload Modal & Action Workflows** (TODO)
 - [ ] **Part 5: Search, Filter, & Sorting Interactions** (TODO)
@@ -154,5 +154,27 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
   * Enforced full viewport shell at `100dvh` without document-level scroll; main content region has styled custom scrollbars and safe inner padding (16px desktop, 12px mobile).
   * Maintained exact route and form contracts (`/`, `/upload`, `/download/<path:filename>`, `/delete/<path:filename>`).
 * **Open Issues**:
-  * Existing form sections are placed within dark cards; Part 2 and 3 will refine the table density and file metadata presentation.
+  * None.
+
+### Part 2: Main Data Display (Stats, Filter Chips, List & Grid Views, Sorting)
+* **Status**: DONE
+* **Files Touched**:
+  * `src/templates/partials/file_macros.html` (Created reusable macros `file_row` and `file_card` with escaped filenames and tooltips)
+  * `src/templates/partials/icons.html` (Added file-type SVG icons: `file-text`, `image`, `archive`, `video`, `music`, `code`, `clock`, `hard-drive`)
+  * `src/templates/partials/topbar.html` (Integrated global sort dropdown synchronized with table header sorting)
+  * `src/templates/index.html` (Added stat tiles calculated strictly from real data, filter chips with counts, list/grid layouts, no-results state)
+  * `src/static/css/dashboard.css` (Added styles for stat tiles, filter chips, file badges, card hover effects, sortable headers, fast `.is-filtered-out` CSS rule)
+  * `src/static/js/dashboard.js` (Implemented instant client-side search, category filter chips, column/dropdown sorting, view persistence in localStorage and URL param)
+  * `screenshots/part2_list_1366x768.png`, `screenshots/part2_list_1920x1080.png`
+  * `screenshots/part2_grid_1366x768.png`, `screenshots/part2_grid_1920x1080.png`
+  * `PROGRESS.md`
+* **Decisions Made**:
+  * Stat tiles derived strictly from available S3 object metadata: Total Files, Total Storage (KB/MB), Largest File, and Latest Upload timestamp. No fabricated storage quotas or fake percentages.
+  * Filter chips dynamically display real category counts (All, Documents, Images, Other).
+  * Fast O(1) visibility toggling using `.is-filtered-out` ensures high performance even with 500+ files.
+  * Dual view modes: Dense list table view with sortable columns (name, type, size, modified) and responsive grid view, persisted in `localStorage`.
+  * Download button wired directly to `url_for('download', filename=file.key)`; Delete button preserved as a non-functional placeholder until Part 3 per task instructions.
+* **Open Issues**:
+  * Delete action workflow and modal confirmation to be wired in Part 3/4.
+
 

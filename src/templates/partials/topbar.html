@@ -22,7 +22,19 @@
 
   <!-- Right: Actions and Controls -->
   <div class="topbar-right">
-    <!-- View Switcher (Placeholder for Part 2/3) -->
+    <!-- Sort Select Control -->
+    <div class="d-none d-sm-block">
+      <select id="global-sort-select" class="select-dense" aria-label="Sort files">
+        <option value="name-asc">Name (A-Z)</option>
+        <option value="name-desc">Name (Z-A)</option>
+        <option value="date-desc" selected>Newest First</option>
+        <option value="date-asc">Oldest First</option>
+        <option value="size-desc">Largest First</option>
+        <option value="size-asc">Smallest First</option>
+      </select>
+    </div>
+
+    <!-- View Switcher (List vs Grid) -->
     <div class="view-toggle-group" role="group" aria-label="View toggle">
       <button type="button" class="view-toggle-btn active" data-view-toggle="list" title="List View" data-bs-toggle="tooltip">
         {{ icon('list', size=15) }}
@@ -32,10 +44,10 @@
       </button>
     </div>
 
-    <!-- Upload Button Trigger (Opens modal or scrolls to form) -->
+    <!-- Upload Button Trigger (Opens modal) -->
     <button type="button" class="btn-dense btn-lime" data-bs-toggle="modal" data-bs-target="#uploadModal">
       {{ icon('upload', size=15) }}
-      <span>Upload File</span>
+      <span>Upload</span>
     </button>
   </div>
 </header>
