@@ -84,6 +84,38 @@ class BaselineRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         mock_s3.delete_file.assert_called_with("sample_note.pdf")
 
+    @patch("src.app.s3")
+    def test_empty_state_rendering(self, mock_s3):
+        mock_s3.list_files.return_value = []
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode("utf-8")
+        self.assertIn("empty-state-card", html)
+        self.assertIn("No academic files stored in your cloud storage yet.", html)
+        self.assertIn("Upload Note", html)
+
+    @patch("src.app.s3")
+    def test_s3_failure_error_handling(self, mock_s3):
+        mock_s3.list_files.side_effect = Exception("S3 bucket connection timeout")
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode("utf-8")
+        self.assertIn("globalToastContainer", html)
+        self.assertIn("AWS S3 connection failed", html)
+        self.assertIn("Retry Connection", html)
+
+    def test_toast_container_aria_live(self):
+        with self.client as client:
+            with client.session_transaction() as sess:
+                sess["_flashes"] = [("success", "Operation completed successfully")]
+            response = client.get("/")
+            self.assertEqual(response.status_code, 200)
+            html = response.data.decode("utf-8")
+            self.assertIn('id="globalToastContainer"', html)
+            self.assertIn('aria-live="polite"', html)
+            self.assertIn("toast-success", html)
+            self.assertIn("Operation completed successfully", html)
+
 
 if __name__ == "__main__":
     unittest.main()

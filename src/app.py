@@ -10,7 +10,11 @@ s3 = S3Manager()
 @app.route('/', methods=['GET'])
 def index():
     query = request.args.get('search', '')
-    files = s3.list_files(query)
+    try:
+        files = s3.list_files(query)
+    except Exception as e:
+        flash(f"AWS S3 connection failed: Unable to retrieve files. {str(e)}", "danger")
+        files = []
     return render_template('index.html', files=files, query=query)
 
 def allowed_file(filename):

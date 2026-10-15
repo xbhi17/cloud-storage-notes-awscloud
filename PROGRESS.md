@@ -111,7 +111,7 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
 - [x] **Part 1: Self-Hosted Static Assets & Design System Foundation** (DONE)
 - [x] **Part 2: Main Data Display (Stats, Filter Chips, List & Grid Views, Sorting)** (DONE)
 - [x] **Part 3: File Actions & Security Hardening** (DONE)
-- [ ] **Part 4: UI States (Loading, Empty, Success, Error Toasts & Alerts)** (TODO)
+- [x] **Part 4: UI States (Loading, Empty, Success, Error Toasts & Alerts)** (DONE)
 - [ ] **Part 5: Search, Filter, & Sorting Polish** (TODO)
 - [ ] **Part 6: Final Polish, Accessibility & End-to-End Verification** (TODO)
 
@@ -200,5 +200,31 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
   * Backend safety: Added `MAX_CONTENT_LENGTH = 16 * 1024 * 1024` (16MB) in `src/config.py`, filename extension validation against `ALLOWED_EXTENSIONS`, 413 Payload Too Large error handler with friendly flash message, and `secure_filename` sanitization.
 * **Open Issues**:
   * None.
+
+### Part 4: UI States (Loading, Empty, Success, Error Toasts & Alerts)
+* **Status**: DONE
+* **Files Touched**:
+  * `src/app.py` (Wrapped `s3.list_files` in error handler with flash messaging and fallback to empty list)
+  * `src/templates/base.html` (Added accessible `#globalToastContainer` with `aria-live="polite"` and category mapping; added `<noscript>` fallback alert block)
+  * `src/templates/partials/icons.html` (Added SVG icons for `check-circle`, `info`, `alert-triangle`, and `refresh-cw`)
+  * `src/templates/partials/topbar.html` (Added `id="topbarUploadBtn"` for spinner state management during uploads)
+  * `src/templates/index.html` (Added skeleton table & grid shimmers, empty state card with folder icon, one sentence, and upload CTA with zero illustrations; added inline error alert banner with retry action)
+  * `src/static/css/dashboard.css` (Added styles for skeleton shimmer pulse keyframes, dark toast categories, badges, `.btn-outline-orange`, `.btn-danger-soft`)
+  * `src/static/js/dashboard.js` (Added toast system initialization, dynamic toast generator `spawnToast`, retry action delegation, upload button spinner state, and testing hooks for `?state=loading`, `?state=empty`, `?state=success`, `?state=error`)
+  * `tests/test_baseline.py` (Added 3 unit tests covering empty state rendering, S3 error resilience, and accessible toast container; 10/10 tests passing)
+  * `screenshots/part4_loading_1366x768.png`, `screenshots/part4_loading_390x844.png`
+  * `screenshots/part4_empty_1366x768.png`, `screenshots/part4_empty_390x844.png`
+  * `screenshots/part4_success_1366x768.png`, `screenshots/part4_success_390x844.png`
+  * `screenshots/part4_error_1366x768.png`, `screenshots/part4_error_390x844.png`
+  * `PROGRESS.md`
+* **Decisions Made**:
+  * Loading state: Implemented skeleton table rows (list view) and skeleton cards (grid view) with CSS shimmer gradient animation. Disabled upload buttons in topbar and modal with spinner during upload.
+  * Empty state: Designed a clean card with folder icon, single sentence ("No academic files stored in your cloud storage yet."), and "Upload Note" CTA button. Strictly zero illustrations.
+  * Success state: Toast notifications mapped from Flask flash messages. Includes check-circle SVG icon, `[Success]` badge, and auto-dismisses after 4s (`data-bs-delay="4000"`).
+  * Error state: Both inline alert banner and persistent toast (`data-bs-autohide="false"`), alert-circle SVG icon, `[Error]` badge, clear description, and "Retry Connection" / "Retry Upload" action buttons.
+  * Accessibility: Container uses `aria-live="polite"`. Never uses color alone to convey meaning (combines icon, badge, and text).
+* **Open Issues**:
+  * None.
+
 
 

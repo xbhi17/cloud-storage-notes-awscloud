@@ -37,8 +37,33 @@
 {% endfor %}
 
 <div class="d-flex flex-column gap-16">
+  <!-- 0. INLINE ERROR ALERT (Clear message + Retry action, stays until dismissed) -->
+  <div id="inline-error-alert" class="alert-dark alert-danger d-none p-3 rounded" role="alert">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-12 w-100">
+      <div class="d-flex align-items-center gap-12">
+        <span class="text-orange flex-shrink-0">{{ icon('alert-circle', size=22) }}</span>
+        <div>
+          <div class="fw-bold text-white d-flex align-items-center gap-8" style="font-size: 13px;">
+            <span class="toast-badge badge-danger-subtle text-uppercase fw-bold" style="font-size: 10px;">Error</span>
+            <span id="inline-error-title">Cloud Storage Connection Failed</span>
+          </div>
+          <div class="text-muted-custom mt-1" id="inline-error-msg" style="font-size: 12px;">
+            Unable to establish connection with AWS S3 bucket. Verify cloud credentials or network connectivity.
+          </div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-8">
+        <button type="button" class="btn-dense btn-outline-orange btn-action-sm" id="inline-error-retry-btn">
+          {{ icon('refresh-cw', size=13) }}
+          <span>Retry Connection</span>
+        </button>
+        <button type="button" class="btn-close btn-close-white" id="inline-error-dismiss-btn" aria-label="Dismiss error"></button>
+      </div>
+    </div>
+  </div>
+
   <!-- 1. STAT TILES (Derived strictly from real data) -->
-  <div class="row g-3">
+  <div class="row g-3" id="stat-tiles-row">
     <!-- Total Files -->
     <div class="col-6 col-md-3">
       <div class="stat-tile">
@@ -46,7 +71,7 @@
           {{ icon('folder', size=20) }}
         </div>
         <div class="min-w-0">
-          <div class="stat-val">{{ total_files }}</div>
+          <div class="stat-val" id="stat-total-files">{{ total_files }}</div>
           <div class="stat-label">Total Files</div>
         </div>
       </div>
@@ -59,7 +84,7 @@
           {{ icon('hard-drive', size=20) }}
         </div>
         <div class="min-w-0">
-          <div class="stat-val font-monospace">
+          <div class="stat-val font-monospace" id="stat-total-storage">
             {% if total_size_val.size >= 1024 %}
               {{ (total_size_val.size / 1024)|round(2) }} MB
             {% else %}
@@ -78,9 +103,9 @@
           {{ icon('file', size=20) }}
         </div>
         <div class="min-w-0">
-          <div class="stat-val font-monospace">{{ largest_file.size|round(1) }} KB</div>
+          <div class="stat-val font-monospace" id="stat-largest-size">{{ largest_file.size|round(1) }} KB</div>
           <div class="stat-label">Largest File</div>
-          <div class="stat-sub" title="{{ largest_file.name }}">{{ largest_file.name or 'None' }}</div>
+          <div class="stat-sub" id="stat-largest-name" title="{{ largest_file.name }}">{{ largest_file.name or 'None' }}</div>
         </div>
       </div>
     </div>
@@ -92,16 +117,16 @@
           {{ icon('clock', size=20) }}
         </div>
         <div class="min-w-0">
-          <div class="stat-val font-monospace" style="font-size: 13px;">{{ newest_file.date.split(' ')[0] if newest_file.date else 'None' }}</div>
+          <div class="stat-val font-monospace" id="stat-newest-date" style="font-size: 13px;">{{ newest_file.date.split(' ')[0] if newest_file.date else 'None' }}</div>
           <div class="stat-label">Latest Upload</div>
-          <div class="stat-sub" title="{{ newest_file.name }}">{{ newest_file.name or 'None' }}</div>
+          <div class="stat-sub" id="stat-newest-name" title="{{ newest_file.name }}">{{ newest_file.name or 'None' }}</div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 2. FILTER BAR & VIEW HEADER -->
-  <div class="dark-card p-3 d-flex flex-wrap align-items-center justify-content-between gap-12">
+  <div class="dark-card p-3 d-flex flex-wrap align-items-center justify-content-between gap-12" id="filter-bar-card">
     <!-- Filter Chips -->
     <div class="filter-chips-container" role="tablist" aria-label="Filter file types">
       <button type="button" class="filter-chip active" data-filter-category="all">
@@ -141,8 +166,85 @@
     </div>
   </div>
 
-  <!-- 3. FILE EXPLORER: LIST VIEW -->
-  <div id="list-view-container" class="dark-card p-0 overflow-hidden">
+  <!-- 3. SKELETON LOADING STATE (Pulse/shimmer animation during load) -->
+  <div id="skeleton-loading-container" class="d-none">
+    <!-- Skeleton Table for List View -->
+    <div id="skeleton-table-card" class="dark-card p-0 overflow-hidden mb-3">
+      <div class="table-responsive">
+        <table class="dark-table align-middle">
+          <thead>
+            <tr>
+              <th><span>Document Name</span></th>
+              <th style="width: 110px;"><span>Type</span></th>
+              <th style="width: 140px;"><span>Size</span></th>
+              <th style="width: 200px;"><span>Upload Timestamp</span></th>
+              <th class="text-end" style="width: 190px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in range(4) %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-12">
+                  <div class="skeleton-shimmer skeleton-circle"></div>
+                  <div class="skeleton-shimmer skeleton-line" style="width: {{ [200, 260, 170, 230][i] }}px;"></div>
+                </div>
+              </td>
+              <td><div class="skeleton-shimmer skeleton-badge"></div></td>
+              <td><div class="skeleton-shimmer skeleton-line" style="width: 65px;"></div></td>
+              <td><div class="skeleton-shimmer skeleton-line" style="width: 130px;"></div></td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-8">
+                  <div class="skeleton-shimmer skeleton-line" style="width: 76px; height: 26px;"></div>
+                  <div class="skeleton-shimmer skeleton-line" style="width: 64px; height: 26px;"></div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Skeleton Grid for Grid View -->
+    <div id="skeleton-grid-cards" class="row g-3 d-none">
+      {% for i in range(3) %}
+      <div class="col-md-6 col-xl-4">
+        <div class="skeleton-card">
+          <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="skeleton-shimmer skeleton-circle"></div>
+            <div class="skeleton-shimmer skeleton-badge"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-line mb-2" style="width: 75%; height: 16px;"></div>
+          <div class="skeleton-shimmer skeleton-line mb-4" style="width: 45%; height: 11px;"></div>
+          <div class="d-flex gap-8 pt-2">
+            <div class="skeleton-shimmer skeleton-line flex-grow-1" style="height: 28px;"></div>
+            <div class="skeleton-shimmer skeleton-line" style="width: 32px; height: 28px;"></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 4. EMPTY STATE (Icon + One sentence + Upload CTA, No illustrations) -->
+  <div id="empty-state-card" class="dark-card text-center py-5 {% if total_files > 0 %}d-none{% endif %}">
+    <div class="d-flex flex-column align-items-center justify-content-center gap-12 py-4">
+      <div class="text-subtle-custom mb-1">
+        {{ icon('folder', size=42) }}
+      </div>
+      <p class="text-white fw-medium mb-3" style="font-size: 14px;">
+        No academic files stored in your cloud storage yet.
+      </p>
+      <button type="button" class="btn-dense btn-lime" data-bs-toggle="modal" data-bs-target="#uploadModal">
+        {{ icon('upload', size=15) }}
+        <span>Upload Note</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 5. FILE EXPLORER: LIST VIEW -->
+  <div id="list-view-container" class="dark-card p-0 overflow-hidden {% if total_files == 0 %}d-none{% endif %}">
     <div class="table-responsive">
       <table class="dark-table align-middle">
         <thead>
@@ -169,40 +271,22 @@
         <tbody id="file-table-body">
           {% for file in files %}
             {{ file_row(file) }}
-          {% else %}
-            <tr>
-              <td colspan="5" class="text-center py-5 text-muted-custom">
-                <div class="d-flex flex-column align-items-center gap-8">
-                  <span class="text-subtle-custom">{{ icon('folder', size=36) }}</span>
-                  <span>No academic resources stored yet. Upload your first note!</span>
-                </div>
-              </td>
-            </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- 4. FILE EXPLORER: GRID VIEW -->
+  <!-- 6. FILE EXPLORER: GRID VIEW -->
   <div id="grid-view-container" class="d-none">
     <div class="row g-3" id="file-grid-row">
       {% for file in files %}
         {{ file_card(file) }}
-      {% else %}
-        <div class="col-12">
-          <div class="dark-card text-center py-5 text-muted-custom">
-            <div class="d-flex flex-column align-items-center gap-8">
-              <span class="text-subtle-custom">{{ icon('folder', size=36) }}</span>
-              <span>No academic resources stored yet. Upload your first note!</span>
-            </div>
-          </div>
-        </div>
       {% endfor %}
     </div>
   </div>
 
-  <!-- 5. NO SEARCH RESULTS STATE -->
+  <!-- 7. NO SEARCH RESULTS STATE -->
   <div id="no-search-results" class="dark-card text-center py-5 d-none">
     <div class="d-flex flex-column align-items-center gap-12">
       <span class="text-orange">{{ icon('alert-circle', size=38) }}</span>

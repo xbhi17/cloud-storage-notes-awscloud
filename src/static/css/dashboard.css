@@ -738,6 +738,120 @@ input[type="file"].select-dense::file-selector-button:hover {
 }
 
 /* ==========================================================================
+   UI STATES: SKELETON LOADERS
+   ========================================================================== */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s infinite ease-in-out;
+  border-radius: var(--radius-control);
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+}
+.skeleton-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+.skeleton-badge {
+  width: 48px;
+  height: 20px;
+  border-radius: 9999px;
+}
+.skeleton-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: var(--space-16);
+  height: 100%;
+}
+
+/* ==========================================================================
+   UI STATES: TOAST NOTIFICATIONS & ALERTS
+   ========================================================================== */
+.toast-container {
+  max-width: 440px;
+}
+.dark-toast {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: var(--radius-card);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75);
+  min-width: 320px;
+  max-width: 420px;
+  color: var(--text);
+  margin-top: 8px;
+}
+.dark-toast.toast-success {
+  border-left: 4px solid var(--lime) !important;
+}
+.dark-toast.toast-danger,
+.dark-toast.toast-error {
+  border-left: 4px solid var(--orange) !important;
+}
+.dark-toast.toast-warning {
+  border-left: 4px solid var(--yellow) !important;
+}
+.dark-toast.toast-info {
+  border-left: 4px solid var(--blue) !important;
+}
+
+.toast-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.badge-success-subtle {
+  background-color: rgba(199, 243, 107, 0.15);
+  color: var(--lime);
+}
+.badge-danger-subtle {
+  background-color: rgba(255, 81, 43, 0.15);
+  color: var(--orange);
+}
+.badge-warning-subtle {
+  background-color: rgba(255, 197, 46, 0.15);
+  color: var(--yellow);
+}
+.badge-info-subtle {
+  background-color: rgba(23, 101, 209, 0.15);
+  color: #6ba6f7;
+}
+
+.btn-outline-orange {
+  border: 1px solid rgba(255, 81, 43, 0.5);
+  color: var(--orange);
+  background-color: rgba(255, 81, 43, 0.08);
+}
+.btn-outline-orange:hover {
+  background-color: var(--orange);
+  color: #ffffff;
+}
+
+.btn-danger-soft {
+  background-color: rgba(255, 81, 43, 0.12);
+  color: var(--orange);
+  border: 1px solid rgba(255, 81, 43, 0.3);
+}
+.btn-danger-soft:hover {
+  background-color: var(--orange);
+  color: #ffffff;
+}
+
+.empty-state-card {
+  background-color: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+}
+
+/* ==========================================================================
    UTILITIES
    ========================================================================== */
 .text-muted-custom { color: var(--text-muted) !important; }
@@ -745,6 +859,7 @@ input[type="file"].select-dense::file-selector-button:hover {
 .text-lime { color: var(--lime) !important; }
 .text-orange { color: var(--orange) !important; }
 .text-blue { color: var(--blue) !important; }
+.text-yellow { color: var(--yellow) !important; }
 .bg-surface { background-color: var(--surface) !important; }
 .bg-surface-2 { background-color: var(--surface-2) !important; }
 .border-subtle { border: 1px solid var(--border) !important; }
@@ -752,5 +867,6 @@ input[type="file"].select-dense::file-selector-button:hover {
 .gap-8 { gap: 8px !important; }
 .gap-12 { gap: 12px !important; }
 .gap-16 { gap: 16px !important; }
+
 
 

@@ -61,9 +61,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (viewMode === 'grid') {
       if (listViewContainer) listViewContainer.classList.add('d-none');
       if (gridViewContainer) gridViewContainer.classList.remove('d-none');
+      const skTable = document.getElementById('skeleton-table-card');
+      const skGrid = document.getElementById('skeleton-grid-cards');
+      if (skTable) skTable.classList.add('d-none');
+      if (skGrid) skGrid.classList.remove('d-none');
     } else {
       if (gridViewContainer) gridViewContainer.classList.add('d-none');
       if (listViewContainer) listViewContainer.classList.remove('d-none');
+      const skTable = document.getElementById('skeleton-table-card');
+      const skGrid = document.getElementById('skeleton-grid-cards');
+      if (skGrid) skGrid.classList.add('d-none');
+      if (skTable) skTable.classList.remove('d-none');
     }
   };
 
@@ -411,9 +419,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const xhr = new XMLHttpRequest();
 
         if (progressWrapper) progressWrapper.classList.remove('d-none');
+        const topbarUploadBtn = document.getElementById('topbarUploadBtn');
+        if (topbarUploadBtn) {
+          topbarUploadBtn.disabled = true;
+          topbarUploadBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span><span>Uploading...</span>`;
+        }
         if (uploadSubmitBtn) {
           uploadSubmitBtn.disabled = true;
-          uploadSubmitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Uploading...`;
+          uploadSubmitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span><span>Uploading to S3...</span>`;
         }
 
         xhr.upload.addEventListener('progress', (ev) => {
@@ -431,10 +444,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         xhr.addEventListener('error', () => {
-          showError('Upload failed. Please check network connection.');
+          showError('Upload failed: Network connection error. Unable to send file to server.');
           if (uploadSubmitBtn) {
             uploadSubmitBtn.disabled = false;
             uploadSubmitBtn.innerHTML = `<span>Upload File</span>`;
+          }
+          if (topbarUploadBtn) {
+            topbarUploadBtn.disabled = false;
+            topbarUploadBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg><span>Upload</span>`;
+          }
+          if (window.spawnToast) {
+            window.spawnToast({
+              type: 'danger',
+              badge: 'Error',
+              message: 'Network connection lost during upload. Please verify your internet and retry.',
+              retry: 'upload'
+            });
           }
         });
 
@@ -512,6 +537,186 @@ document.addEventListener('DOMContentLoaded', () => {
       deleteFileNameSpan.textContent = fname;
     }
   };
+
+  // =========================================================================
+  // 11. TOAST SYSTEM & RETRY ACTIONS
+  // =========================================================================
+  const initGlobalToasts = () => {
+    if (window.bootstrap && window.bootstrap.Toast) {
+      document.querySelectorAll('#globalToastContainer .toast').forEach(toastEl => {
+        const autohide = toastEl.getAttribute('data-bs-autohide') !== 'false';
+        const delay = parseInt(toastEl.getAttribute('data-bs-delay')) || 4000;
+        const inst = window.bootstrap.Toast.getOrCreateInstance(toastEl, {
+          autohide,
+          delay
+        });
+        inst.show();
+      });
+    }
+  };
+  initGlobalToasts();
+
+  // Retry Action Handlers
+  document.addEventListener('click', (e) => {
+    const retryBtn = e.target.closest('.toast-retry-action') || e.target.closest('#inline-error-retry-btn');
+    if (retryBtn) {
+      const action = retryBtn.getAttribute('data-retry') || 'reload';
+      if (action === 'upload') {
+        const uploadModalEl = document.getElementById('uploadModal');
+        if (uploadModalEl && window.bootstrap && window.bootstrap.Modal) {
+          const modal = window.bootstrap.Modal.getOrCreateInstance(uploadModalEl);
+          modal.show();
+        }
+      } else {
+        window.location.reload();
+      }
+    }
+  });
+
+  // Dynamic Toast Generator
+  const spawnToast = ({ type = 'info', badge = 'Notice', message = '', retry = null }) => {
+    const container = document.getElementById('globalToastContainer');
+    if (!container) return;
+
+    const toastEl = document.createElement('div');
+    const isDanger = type === 'danger' || type === 'error';
+    const autohide = !isDanger;
+    const delay = isDanger ? 0 : 4000;
+    const role = isDanger ? 'alert' : 'status';
+    const ariaLive = isDanger ? 'assertive' : 'polite';
+
+    toastEl.className = `toast dark-toast toast-${type} align-items-center show shadow-lg`;
+    toastEl.setAttribute('role', role);
+    toastEl.setAttribute('aria-live', ariaLive);
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.setAttribute('data-bs-autohide', autohide ? 'true' : 'false');
+    if (delay) toastEl.setAttribute('data-bs-delay', delay);
+
+    let iconSvg = '';
+    let badgeClass = '';
+    let iconClass = '';
+    if (type === 'success') {
+      iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+      badgeClass = 'badge-success-subtle text-lime';
+      iconClass = 'text-lime';
+    } else if (isDanger) {
+      iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+      badgeClass = 'badge-danger-subtle text-orange';
+      iconClass = 'text-orange';
+    } else if (type === 'warning') {
+      iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+      badgeClass = 'badge-warning-subtle text-yellow';
+      iconClass = 'text-yellow';
+    } else {
+      iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+      badgeClass = 'badge-info-subtle text-blue';
+      iconClass = 'text-blue';
+    }
+
+    let retryBtnHtml = '';
+    if (retry === 'upload') {
+      retryBtnHtml = `<div class="mt-2"><button type="button" class="btn-dense btn-danger-soft btn-action-sm toast-retry-action" data-retry="upload"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg><span class="ms-1">Retry Upload</span></button></div>`;
+    } else if (retry === 'reload') {
+      retryBtnHtml = `<div class="mt-2"><button type="button" class="btn-dense btn-danger-soft btn-action-sm toast-retry-action" data-retry="reload"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg><span class="ms-1">Retry Connection</span></button></div>`;
+    }
+
+    toastEl.innerHTML = `
+      <div class="toast-content d-flex align-items-start p-3 gap-12">
+        <span class="${iconClass} flex-shrink-0 mt-1">${iconSvg}</span>
+        <div class="flex-grow-1 min-w-0">
+          <div class="d-flex align-items-center gap-8 mb-1">
+            <span class="toast-badge ${badgeClass} text-uppercase fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">${badge}</span>
+            <span class="text-subtle-custom" style="font-size: 11px;">${isDanger ? 'Action required' : 'Notification'}</span>
+          </div>
+          <div class="toast-message text-white" style="font-size: 13px;">${message}</div>
+          ${retryBtnHtml}
+        </div>
+        <button type="button" class="btn-close btn-close-white flex-shrink-0" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    `;
+
+    container.appendChild(toastEl);
+    if (window.bootstrap && window.bootstrap.Toast) {
+      const inst = window.bootstrap.Toast.getOrCreateInstance(toastEl, {
+        autohide,
+        delay
+      });
+      inst.show();
+    }
+  };
+  window.spawnToast = spawnToast;
+
+  // =========================================================================
+  // 12. UI STATES TESTING & AUTOMATION (?state=loading|empty|success|error)
+  // =========================================================================
+  const stateParam = urlParams.get('state');
+
+  if (stateParam === 'loading') {
+    // Show skeleton cards/rows, hide real containers
+    const skeletonContainer = document.getElementById('skeleton-loading-container');
+    const skeletonTable = document.getElementById('skeleton-table-card');
+    const skeletonGrid = document.getElementById('skeleton-grid-cards');
+    if (skeletonContainer) skeletonContainer.classList.remove('d-none');
+    if (state.view === 'grid') {
+      if (skeletonTable) skeletonTable.classList.add('d-none');
+      if (skeletonGrid) skeletonGrid.classList.remove('d-none');
+    } else {
+      if (skeletonGrid) skeletonGrid.classList.add('d-none');
+      if (skeletonTable) skeletonTable.classList.remove('d-none');
+    }
+    if (listViewContainer) listViewContainer.classList.add('d-none');
+    if (gridViewContainer) gridViewContainer.classList.add('d-none');
+
+    // Upload button disabled with spinner during upload
+    const topbarUploadBtn = document.getElementById('topbarUploadBtn');
+    if (topbarUploadBtn) {
+      topbarUploadBtn.disabled = true;
+      topbarUploadBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span><span>Uploading...</span>`;
+    }
+    const uploadSubmitBtn = document.getElementById('uploadSubmitBtn');
+    if (uploadSubmitBtn) {
+      uploadSubmitBtn.disabled = true;
+      uploadSubmitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span><span>Uploading to S3...</span>`;
+    }
+  } else if (stateParam === 'empty') {
+    // Empty state: icon + one sentence + Upload CTA (no illustrations)
+    if (listViewContainer) listViewContainer.classList.add('d-none');
+    if (gridViewContainer) gridViewContainer.classList.add('d-none');
+    const emptyStateCard = document.getElementById('empty-state-card');
+    if (emptyStateCard) emptyStateCard.classList.remove('d-none');
+
+    const statTotalFiles = document.getElementById('stat-total-files');
+    if (statTotalFiles) statTotalFiles.textContent = '0';
+    const statTotalStorage = document.getElementById('stat-total-storage');
+    if (statTotalStorage) statTotalStorage.textContent = '0.00 KB';
+    const statLargestSize = document.getElementById('stat-largest-size');
+    if (statLargestSize) statLargestSize.textContent = '0.0 KB';
+    const statLargestName = document.getElementById('stat-largest-name');
+    if (statLargestName) statLargestName.textContent = 'None';
+    const statNewestDate = document.getElementById('stat-newest-date');
+    if (statNewestDate) statNewestDate.textContent = 'None';
+    const statNewestName = document.getElementById('stat-newest-name');
+    if (statNewestName) statNewestName.textContent = 'None';
+    if (visibleCountBadge) visibleCountBadge.textContent = '0 files';
+  } else if (stateParam === 'success') {
+    // Success toast from flash messages
+    spawnToast({
+      type: 'success',
+      badge: 'Success',
+      message: 'Note "CS601_Distributed_Systems.pdf" uploaded successfully to AWS S3.'
+    });
+  } else if (stateParam === 'error') {
+    // Error state: inline alert + toast with clear message and retry action
+    const inlineAlert = document.getElementById('inline-error-alert');
+    if (inlineAlert) inlineAlert.classList.remove('d-none');
+
+    spawnToast({
+      type: 'danger',
+      badge: 'Error',
+      message: 'AWS S3 Connection Failure: Unable to communicate with remote storage bucket. Verify credentials or connection.',
+      retry: 'reload'
+    });
+  }
 
   // Support ?show_modal=upload or ?show_modal=delete for automated screenshot testing
   if (showModalParam === 'upload') {
